@@ -1,0 +1,58 @@
+services:
+  velocitymq:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: velocitymq:latest
+    container_name: velocitymq-broker
+    restart: unless-stopped
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+    ports:
+      - "9092:9092"   # Kafka Wire Protocol (TCP)
+      - "9093:9093"   # Prometheus HTTP Metrics & Healthcheck
+    environment:
+      # Network Binding (0.0.0.0 required for container ingress)
+      - HOST=0.0.0.0
+      - PORT=9092
+      
+      # Standalone Developer Mode (Dictator Mode: bypasses Raft quorum for instant <5µs commits)
+      - CLUSTER_MODE=false
+      - REPLICATION_FACTOR=1
+      
+      # Storage & Retention Configuration
+      - DATA_DIR=/var/lib/velocitymq/data
+      - LOG_RETENTION_HOURS=168          # 7 days retention
+      - LOG_SEGMENT_BYTES=524288000      # 500MB segment rolling
+      
+      # Prometheus Observability
+      - METRICS_ENABLED=true
+      - METRICS_HOST=0.0.0.0
+      - METRICS_PORT=9093
+
+      # Optional: AWS S3 Tiered Storage ("Infinite Storage" cold tier archive hook)
+      # - TIERED_STORAGE_ENABLED=true
+      # - S3_BUCKET=my-velocitymq-archive
+      # - AWS_REGION=us-east-1
+      # - AWS_ACCESS_KEY_ID=your_access_key
+      # - AWS_SECRET_ACCESS_KEY=your_secret_key
+    volumes:
+      - velocitymq_wal_data:/var/lib/velocitymq/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9093/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 256M
+
+volumes:
+  velocitymq_wal_data:
+    name: velocitymq_wal_data
+    driver: local

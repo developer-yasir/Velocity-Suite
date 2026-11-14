@@ -1,0 +1,29 @@
+[package]
+name = "velocity_mq"
+version = "0.1.0"
+edition = "2021"
+description = "Next-generation zero-copy distributed message broker in Rust"
+license = "AGPL-3.0-only"
+authors = ["Yasir Saleem <engyasirsaleem@gmail.com>"]
+repository = "https://github.com/developer-yasir/Velocity-MQ"
+
+[dependencies]
+arc-swap = "1.9.5"
+aws-config = "1.13.2"
+aws-sdk-s3 = "1.159.0"
+bytes = "1.12.1"
+crossbeam-channel = "0.5.17"
+ctrlc = "3.5.2"
+dashmap = "6.2.1"
+http-body-util = "0.1.5"
+hyper = { version = "1.12.0", features = ["server", "http1"] }
+hyper-util = { version = "0.1.21", features = ["server", "tokio", "http1"] }
+libc = "0.2.191"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "fs", "sync", "net", "io-util"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+io-uring = "0.7.16"
+
+[[bench]]
+name = "latency_bench"
+harness = false

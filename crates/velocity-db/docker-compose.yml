@@ -1,0 +1,128 @@
+# ==============================================================================
+# VelocityDB Enterprise Orchestration Suite
+# - Default Stack: docker compose up -d (Engine on :6379 + Studio GUI on :3000)
+# - 3-Node Cluster: docker compose --profile cluster up -d
+# ==============================================================================
+
+services:
+  # ============================================================================
+  # 1. High-Performance Core Engine (Rust + io_uring)
+  # ============================================================================
+  velocitydb-engine:
+    image: ghcr.io/developer-yasir/velocitydb:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: velocitydb-engine
+    restart: always
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_ADMIN
+      - IPC_LOCK
+    ports:
+      - "6379:6379"   # Client RESP Protocol
+      - "16379:16379" # Cluster Gossip Bus
+      - "8080:8080"   # Studio HTTP & WebSocket Management API
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    volumes:
+      - velocity_engine_data:/opt/velocitydb/data
+    networks:
+      - velocity-net
+    command: ["0.0.0.0:6379"]
+
+  # ============================================================================
+  # 2. VelocityDB Studio (Next.js Standalone Dark-Mode GUI)
+  # ============================================================================
+  velocitydb-studio:
+    build:
+      context: ./studio
+      dockerfile: Dockerfile
+    container_name: velocitydb-studio
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      - velocitydb-engine
+    networks:
+      - velocity-net
+
+  # ============================================================================
+  # 3-Node Distributed Cluster (Profile: cluster)
+  # ============================================================================
+  velocity-node-1:
+    profiles: ["cluster"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: velocity-node-1
+    restart: always
+    ports:
+      - "6379:6379"
+      - "16379:16379"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 1048576, hard: 1048576 }
+    volumes:
+      - node1_data:/opt/velocitydb/data
+    networks:
+      - velocity-net
+    command: ["0.0.0.0:6379"]
+
+  velocity-node-2:
+    profiles: ["cluster"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: velocity-node-2
+    restart: always
+    ports:
+      - "6380:6380"
+      - "16380:16380"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 1048576, hard: 1048576 }
+    volumes:
+      - node2_data:/opt/velocitydb/data
+    networks:
+      - velocity-net
+    command: ["0.0.0.0:6380"]
+
+  velocity-node-3:
+    profiles: ["cluster"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: velocity-node-3
+    restart: always
+    ports:
+      - "6381:6381"
+      - "16381:16381"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 1048576, hard: 1048576 }
+    volumes:
+      - node3_data:/opt/velocitydb/data
+    networks:
+      - velocity-net
+    command: ["0.0.0.0:6381"]
+
+networks:
+  velocity-net:
+    driver: bridge
+
+volumes:
+  velocity_engine_data:
+  node1_data:
+  node2_data:
+  node3_data:

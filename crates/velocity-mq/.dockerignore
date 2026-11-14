@@ -1,0 +1,14 @@
+target/
+.git/
+.gitignore
+.dockerignore
+.env
+.env.*
+*.wal
+*.log
+*.index
+data/
+.idea/
+.vscode/
+*.swp
+*.bak

@@ -1,0 +1,125 @@
+# ==============================================================================
+# Velocity-Suite: The Hardware-Accelerated Real-Time Data Platform
+# 1-Click Launch: docker compose up -d
+#
+# Ports:
+#   - 9092  : VelocityMQ Kafka Wire Protocol
+#   - 9093  : VelocityMQ Prometheus Observability (/metrics, /health)
+#   - 6379  : VelocityDB Redis RESP Wire Protocol
+#   - 8080  : VelocityDB Telemetry & HTTP Management API
+#   - 3000  : Velocity Studio Dark-Mode Web Cockpit GUI
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # 1. VelocityMQ - Hardware-Accelerated Kafka Event Streaming Engine (Rust)
+  # ============================================================================
+  velocitymq:
+    image: ghcr.io/developer-yasir/velocity-mq:latest
+    build:
+      context: ./crates/velocity-mq
+      dockerfile: Dockerfile
+    container_name: velocitymq
+    restart: always
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_ADMIN
+      - IPC_LOCK
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      - CLUSTER_MODE=false
+      - REPLICATION_FACTOR=1
+      - LOG_RETENTION_MINUTES=10
+      - LOG_SEGMENT_BYTES=52428800
+      - METRICS_ENABLED=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    volumes:
+      - velocitymq_data:/var/lib/velocitymq/data
+    networks:
+      - velocity-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ============================================================================
+  # 2. VelocityDB - Thread-per-Core In-Memory Database (Rust + io_uring)
+  # ============================================================================
+  velocitydb:
+    image: ghcr.io/developer-yasir/velocitydb:latest
+    build:
+      context: ./crates/velocity-db
+      dockerfile: Dockerfile
+    container_name: velocitydb-engine
+    restart: always
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_ADMIN
+      - IPC_LOCK
+    ports:
+      - "6379:6379"
+      - "8080:8080"
+      - "16379:16379"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    volumes:
+      - velocitydb_data:/opt/velocitydb/data
+    networks:
+      - velocity-net
+    command: ["0.0.0.0:6379"]
+    deploy:
+      resources:
+        limits:
+          memory: 2200M
+
+  # ============================================================================
+  # 3. Velocity Studio - Real-Time Dark-Mode Management Cockpit (Next.js 15)
+  # ============================================================================
+  studio:
+    image: ghcr.io/developer-yasir/velocitydb-studio:latest
+    build:
+      context: ./studio
+      dockerfile: Dockerfile
+    container_name: velocitydb-studio
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      - velocitymq
+      - velocitydb
+    networks:
+      - velocity-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  velocitymq_data:
+  velocitydb_data:
+
+networks:
+  velocity-net:
+    driver: bridge

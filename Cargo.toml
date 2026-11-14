@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/velocity-mq",
+    "crates/velocity-db",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Yasir Saleem <engyasirsaleem@gmail.com>"]
+license = "AGPL-3.0-only"
+repository = "https://github.com/developer-yasir/Velocity-Suite"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 16
+panic = "abort"
+overflow-checks = false
