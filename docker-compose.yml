@@ -19,7 +19,7 @@ services:
   velocitymq:
     image: ghcr.io/developer-yasir/velocity-mq:latest
     build:
-      context: ./crates/velocity-mq
+      context: ./velocity-mq
       dockerfile: Dockerfile
     container_name: velocitymq
     restart: always
@@ -60,7 +60,7 @@ services:
   velocitydb:
     image: ghcr.io/developer-yasir/velocitydb:latest
     build:
-      context: ./crates/velocity-db
+      context: ./velocity-db
       dockerfile: Dockerfile
     container_name: velocitydb-engine
     restart: always

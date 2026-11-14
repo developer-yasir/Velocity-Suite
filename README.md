@@ -220,16 +220,15 @@ Velocity-Suite/
 ├── LICENSE                       # GNU AGPLv3 + Commercial Dual License
 ├── README.md                     # Platform Documentation
 │
-├── crates/
-│   ├── velocity-mq/              # Full VelocityMQ Engine (Kafka Wire Protocol)
-│   │   ├── Cargo.toml
-│   │   ├── Dockerfile
-│   │   └── src/
-│   │
-│   └── velocity-db/              # Full VelocityDB Engine (Redis RESP Protocol)
-│       ├── Cargo.toml
-│       ├── Dockerfile
-│       └── src/
+├── velocity-mq/                  # Full VelocityMQ Engine (Kafka Wire Protocol)
+│   ├── Cargo.toml
+│   ├── Dockerfile
+│   └── src/
+│
+├── velocity-db/                  # Full VelocityDB Engine (Redis RESP Protocol)
+│   ├── Cargo.toml
+│   ├── Dockerfile
+│   └── src/
 │
 ├── studio/                       # Velocity Studio Cockpit GUI (Next.js 15)
 │   ├── package.json
